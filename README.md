@@ -1,14 +1,16 @@
 # PostcodeJP - 郵便番号API
 
-日本郵便の郵便番号データを活用した無料の検索APIシステム
+日本郵便の郵便番号データを活用した**完全無料**の検索APIシステム
 
-[![Deploy to Firebase](https://github.com/YOUR_USERNAME/postcodejp/actions/workflows/deploy.yml/badge.svg)](https://github.com/YOUR_USERNAME/postcodejp/actions/workflows/deploy.yml)
+[![Deploy to Cloudflare Workers](https://github.com/Yorihito/postcodejp/actions/workflows/deploy.yml/badge.svg)](https://github.com/Yorihito/postcodejp/actions/workflows/deploy.yml)
 
-## 機能
+## 特徴
 
+- 🆓 **完全無料** - Cloudflare Workers無料枠で運用
 - 🔍 郵便番号から住所を検索
 - 🏠 住所から郵便番号を検索
 - 🏢 事業所の個別郵便番号検索
+- ⚡ 高速レスポンス（エッジで実行）
 - 🔄 毎月自動データ更新（GitHub Actions）
 
 ## API エンドポイント
@@ -27,48 +29,52 @@
 
 ```bash
 # 郵便番号から住所取得
-curl https://YOUR_PROJECT.web.app/api/postal-codes/1000001
+curl https://postcodejp-api.YOUR_SUBDOMAIN.workers.dev/api/postal-codes/1000001
 
 # 住所から検索
-curl "https://YOUR_PROJECT.web.app/api/postal-codes/search?q=千代田"
+curl "https://postcodejp-api.YOUR_SUBDOMAIN.workers.dev/api/postal-codes/search?q=千代田"
 ```
 
 ## セットアップ
 
-### 1. Firebaseプロジェクト作成
+### 1. Cloudflareアカウント作成
+
+[Cloudflare](https://dash.cloudflare.com/sign-up) でアカウントを作成
+
+### 2. Wranglerでログイン
 
 ```bash
-# Firebase CLIインストール
-npm install -g firebase-tools
-
-# ログイン
-firebase login
-
-# プロジェクト初期化
-firebase use --add
+cd workers
+npm install
+npx wrangler login
 ```
 
-### 2. 初期データインポート
+### 3. KVネームスペース作成
 
 ```bash
-# Python依存パッケージインストール
-pip install firebase-admin httpx
-
-# サービスアカウントキーを設定
-export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json
-
-# データインポート実行
-python scripts/import_to_firestore.py
+npx wrangler kv:namespace create POSTAL_CODES
+npx wrangler kv:namespace create POSTAL_CODES --preview
 ```
 
-### 3. デプロイ
+表示されたIDを `wrangler.toml` に設定
+
+### 4. 初期データインポート
 
 ```bash
-# Functions依存パッケージインストール
-cd functions && npm install && cd ..
+# データ生成
+pip install httpx
+python scripts/import_to_kv.py
 
-# デプロイ
-firebase deploy
+# KVにアップロード
+for f in ../kv_data/*.json; do
+  npx wrangler kv:bulk put --namespace-id=YOUR_NS_ID "$f"
+done
+```
+
+### 5. デプロイ
+
+```bash
+npx wrangler deploy
 ```
 
 ## GitHub設定
@@ -77,21 +83,28 @@ firebase deploy
 
 | Secret名 | 説明 |
 |---------|------|
-| `FIREBASE_SERVICE_ACCOUNT` | Firebaseサービスアカウントキー（JSON） |
+| `CLOUDFLARE_API_TOKEN` | CloudflareのAPIトークン（Workers編集権限） |
 
 ### Variables設定
 
 | Variable名 | 説明 |
 |------------|------|
-| `FIREBASE_PROJECT_ID` | FirebaseプロジェクトID |
+| `KV_NAMESPACE_ID` | KVネームスペースID |
 
 ## 技術スタック
 
-- **Database**: Cloud Firestore
-- **API**: Cloud Functions (Node.js/TypeScript)
-- **Hosting**: Firebase Hosting
+- **Runtime**: Cloudflare Workers
+- **Storage**: Cloudflare KV
 - **CI/CD**: GitHub Actions
 - **データソース**: [日本郵便](https://www.post.japanpost.jp/zipcode/download.html)
+
+## 無料枠の範囲
+
+| リソース | 無料枠 |
+|---------|-------|
+| Workerリクエスト | 100,000/日 |
+| KVリード | 100,000/日 |
+| KVストレージ | 1GB |
 
 ## ライセンス
 

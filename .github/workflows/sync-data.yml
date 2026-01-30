@@ -2,7 +2,7 @@ name: Sync Postal Code Data
 
 on:
   schedule:
-    # 毎月1日 午前3時 (JST) = 毎月1日 18:00 UTC前日
+    # 毎月1日 午前3時 (JST) = 前日18:00 UTC
     - cron: '0 18 1 * *'
   workflow_dispatch:
 
@@ -19,25 +19,29 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          pip install firebase-admin httpx
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-      - name: Setup Firebase credentials
-        run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > /tmp/firebase-key.json
+      - name: Install Python dependencies
+        run: pip install httpx
 
-      - name: Import data to Firestore
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Generate KV data
+        run: python workers/scripts/import_to_kv.py
+
+      - name: Upload to Cloudflare KV
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: /tmp/firebase-key.json
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          python scripts/import_to_firestore.py
-
-      - name: Cleanup credentials
-        if: always()
-        run: |
-          rm -f /tmp/firebase-key.json
+          cd workers
+          for f in ../kv_data/*.json; do
+            echo "Uploading $f..."
+            wrangler kv:bulk put --namespace-id=${{ vars.KV_NAMESPACE_ID }} "$f"
+          done
 
       - name: Notify completion
-        run: |
-          echo "Data sync completed at $(date)"
+        run: echo "Data sync completed at $(date)"
