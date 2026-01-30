@@ -1,4 +1,4 @@
-name: Sync Postal Code Data
+name: Sync Postal Code Data to Azure Table Storage
 
 on:
   schedule:
@@ -17,31 +17,15 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+          python-version: '3.12'
 
       - name: Install Python dependencies
-        run: pip install httpx
+        run: pip install azure-data-tables httpx
 
-      - name: Install Wrangler
-        run: npm install -g wrangler
-
-      - name: Generate KV data
-        run: python workers/scripts/import_to_kv.py
-
-      - name: Upload to Cloudflare KV
+      - name: Run import script
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          cd workers
-          for f in ../kv_data/*.json; do
-            echo "Uploading $f..."
-            wrangler kv:bulk put --namespace-id=${{ vars.KV_NAMESPACE_ID }} "$f"
-          done
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+        run: python azure-functions/scripts/import_to_table.py
 
       - name: Notify completion
         run: echo "Data sync completed at $(date)"
