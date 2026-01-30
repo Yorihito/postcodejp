@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+functions/node_modules/
+functions/lib/
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Environment
+.env
+.env.local
+
+# Firebase
+.firebase/
+*.log
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data files
+*.csv
+*.zip
+/data/
+/tmp/
+
+# Service account keys (NEVER commit these!)
+*-firebase-adminsdk-*.json
+service-account*.json
+firebase-key.json
