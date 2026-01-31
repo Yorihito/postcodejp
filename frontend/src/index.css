@@ -17,8 +17,6 @@
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
   @apply bg-slate-950 text-slate-50 antialiased selection:bg-blue-500/30;

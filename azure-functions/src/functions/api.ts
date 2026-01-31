@@ -140,10 +140,35 @@ app.http("searchPostalCodes", {
             });
 
             // 全てのキーワード条件を満たす (AND)
-            const filter = termFilters.join(' and ');
+            const primaryFilter = termFilters.join(' and ');
+            let finalFilter = primaryFilter;
+
+            // 連結キーワード（例：町田市小山町）のヒューリスティック分割対応
+            // スペースがなく、特定の接尾辞が含まれる場合に分割を試みる
+            if (terms.length === 1) {
+                const originalTerm = terms[0];
+                // 接尾辞の後にスペースを挿入して分割（ただし末尾は除く）
+                const splitQuery = originalTerm.replace(/([都道府県市区町村郡])(?=.)/g, "$1 ").trim();
+                const splitTerms = splitQuery.split(/\s+/);
+
+                // 分割結果が元の単語と異なり、かつ複数になった場合のみ追加条件を作成
+                if (splitTerms.length > 1 && splitTerms.length < 5) { // 暴走防止のため5単語未満に制限
+                    const splitFilters = splitTerms.map(term => {
+                        const t = term.replace(/'/g, "''");
+                        return `(
+                            (prefecture ge '${t}' and prefecture lt '${t}\uffff') or 
+                            (city ge '${t}' and city lt '${t}\uffff') or 
+                            (town ge '${t}' and town lt '${t}\uffff')
+                        )`;
+                    });
+                    const secondaryFilter = splitFilters.join(' and ');
+                    finalFilter = `(${primaryFilter}) or (${secondaryFilter})`;
+                }
+            }
+
             const { postalCodes } = getTables();
             const entities = postalCodes.listEntities({
-                queryOptions: { filter },
+                queryOptions: { filter: finalFilter },
             });
 
             for await (const entity of entities) {
