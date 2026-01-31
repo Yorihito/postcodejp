@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     
     # Admin API authentication
     admin_api_key: str = ""
+    # Set to True to require admin authentication (recommended for production)
+    require_admin_auth: bool = True
 
     class Config:
         env_file = ".env"

@@ -16,13 +16,15 @@ CORS_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
 
 ### 2. 管理API の認証
 
-- `/api/admin/*` エンドポイントは認証が必要
+- `/api/admin/*` エンドポイントは認証が必要（デフォルト）
 - 環境変数 `ADMIN_API_KEY` でAPIキーを設定
+- 環境変数 `REQUIRE_ADMIN_AUTH` で認証の要否を制御（本番環境では必ずTrueに設定）
 - リクエスト時に `X-API-Key` ヘッダーでAPIキーを送信
 
 ```bash
 # 環境変数の設定
 ADMIN_API_KEY=your-secure-api-key-here
+REQUIRE_ADMIN_AUTH=True
 
 # APIの使用例
 curl -X POST https://api.example.com/api/admin/sync \
@@ -64,6 +66,9 @@ curl -X POST https://api.example.com/api/admin/sync \
    
    # 必須: 管理APIキー (強力なランダムな文字列を使用)
    ADMIN_API_KEY=your-very-strong-random-api-key
+   
+   # 必須: 管理API認証を有効化
+   REQUIRE_ADMIN_AUTH=True
    
    # 必須: CORS許可オリジン (実際のドメインに置き換え)
    CORS_ORIGINS=https://yourdomain.com

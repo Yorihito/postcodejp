@@ -15,11 +15,21 @@ settings = get_settings()
 
 
 def verify_admin_key(x_api_key: str = Header(None)):
-    """Verify admin API key."""
-    if not settings.admin_api_key:
-        # If admin API key is not configured, allow access (backward compatibility)
-        # In production, this should be required
+    """Verify admin API key.
+    
+    Raises:
+        HTTPException: If authentication is required and the key is invalid or missing.
+    """
+    # Check if authentication is required
+    if not settings.require_admin_auth:
+        # Authentication disabled (not recommended for production)
         return
+    
+    if not settings.admin_api_key:
+        raise HTTPException(
+            status_code=500,
+            detail="Server configuration error: Admin API key not configured"
+        )
     
     if not x_api_key or x_api_key != settings.admin_api_key:
         raise HTTPException(

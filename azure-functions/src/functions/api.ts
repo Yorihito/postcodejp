@@ -4,6 +4,20 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { TableClient, AzureNamedKeyCredential } from "@azure/data-tables";
 
+// Allowed characters for search queries
+// Includes: Unicode letters (\p{L}), digits (\p{N}), Japanese-specific ranges,
+// whitespace, and hyphens
+const ALLOWED_SEARCH_PATTERN = /[^\p{L}\p{N}\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf\s\-]/gu;
+
+/**
+ * Sanitize search query to prevent injection attacks.
+ * Allows only Japanese characters (hiragana, katakana, kanji), 
+ * alphanumeric characters, common punctuation, and whitespace.
+ */
+function sanitizeSearchTerm(term: string): string {
+    return term.replace(ALLOWED_SEARCH_PATTERN, '');
+}
+
 // Table Storage 接続 (Lazy Initialization)
 let tables: {
     postalCodes: TableClient;
@@ -130,11 +144,7 @@ app.http("searchPostalCodes", {
             }
 
             // Validate terms to prevent injection
-            const sanitizedTerms = terms.map(term => {
-                // Allow only alphanumeric characters, Japanese characters, and common punctuation
-                // Remove any potentially dangerous characters
-                return term.replace(/[^\p{L}\p{N}\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf\s\-]/gu, '');
-            }).filter(t => t.length > 0);
+            const sanitizedTerms = terms.map(term => sanitizeSearchTerm(term)).filter(t => t.length > 0);
 
             if (sanitizedTerms.length === 0) {
                 return errorResponse("検索キーワードが無効です");
