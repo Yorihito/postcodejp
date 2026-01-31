@@ -129,8 +129,19 @@ app.http("searchPostalCodes", {
                 return jsonResponse({ total: 0, items: [] });
             }
 
-            const termFilters = terms.map(term => {
-                // シングルクォートをエスケープ
+            // Validate terms to prevent injection
+            const sanitizedTerms = terms.map(term => {
+                // Allow only alphanumeric characters, Japanese characters, and common punctuation
+                // Remove any potentially dangerous characters
+                return term.replace(/[^\p{L}\p{N}\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf\s\-]/gu, '');
+            }).filter(t => t.length > 0);
+
+            if (sanitizedTerms.length === 0) {
+                return errorResponse("検索キーワードが無効です");
+            }
+
+            const termFilters = sanitizedTerms.map(term => {
+                // シングルクォートをエスケープ (already sanitized but double-check)
                 const t = term.replace(/'/g, "''");
                 return `(
                     (prefecture ge '${t}' and prefecture lt '${t}\uffff') or 
@@ -145,8 +156,8 @@ app.http("searchPostalCodes", {
 
             // 連結キーワード（例：町田市小山町）のヒューリスティック分割対応
             // スペースがなく、特定の接尾辞が含まれる場合に分割を試みる
-            if (terms.length === 1) {
-                const originalTerm = terms[0];
+            if (sanitizedTerms.length === 1) {
+                const originalTerm = sanitizedTerms[0];
                 // 接尾辞の後にスペースを挿入して分割
                 // 少なくとも1文字以上の先行文字がある場合のみ分割（"市川市"の先頭"市"などを分割しないため）
                 const splitQuery = originalTerm.replace(/(.{1,}[都道府県市区町村郡])(?=.)/g, "$1 ").trim();

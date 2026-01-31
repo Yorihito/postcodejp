@@ -1,15 +1,32 @@
 """Admin API endpoints for data management."""
 
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Header
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.postal_code import PostalCode, OfficePostalCode, SyncHistory
 from app.schemas.postal_code import SyncHistoryResponse, SyncStatusResponse
 from app.services.scheduler import sync_all_data
+from app.config import get_settings
 
 router = APIRouter(prefix="/api/admin", tags=["Admin"])
+settings = get_settings()
+
+
+def verify_admin_key(x_api_key: str = Header(None)):
+    """Verify admin API key."""
+    if not settings.admin_api_key:
+        # If admin API key is not configured, allow access (backward compatibility)
+        # In production, this should be required
+        return
+    
+    if not x_api_key or x_api_key != settings.admin_api_key:
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized: Invalid or missing API key"
+        )
+    return x_api_key
 
 
 @router.post(
@@ -17,7 +34,10 @@ router = APIRouter(prefix="/api/admin", tags=["Admin"])
     summary="手動でデータ同期を実行",
     description="日本郵便のサイトから最新データをダウンロードして同期します。バックグラウンドで実行されます。"
 )
-async def trigger_sync(background_tasks: BackgroundTasks):
+async def trigger_sync(
+    background_tasks: BackgroundTasks,
+    api_key: str = Depends(verify_admin_key)
+):
     """Trigger a manual data sync."""
     background_tasks.add_task(sync_all_data)
     return {"message": "同期処理をバックグラウンドで開始しました"}

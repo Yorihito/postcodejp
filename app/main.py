@@ -55,12 +55,14 @@ app = FastAPI(
 )
 
 # CORS middleware
+# Configure allowed origins from environment variable or use restrictive defaults
+allowed_origins = settings.cors_origins.split(",") if hasattr(settings, 'cors_origins') and settings.cors_origins else ["https://func-postcodejp.azurewebsites.net"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 # Include routers
