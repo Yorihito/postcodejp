@@ -12,9 +12,18 @@ export function PostalCodeSearch() {
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
+    const normalizePostalCode = (input: string) => {
+        return input
+            .replace(/[０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+            .replace(/[－‐]/g, '-');
+    };
+
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (code.length < 7) {
+
+        const normalizedCode = normalizePostalCode(code).replace(/-/g, '');
+
+        if (normalizedCode.length < 7) {
             setError('郵便番号は7桁で入力してください');
             return;
         }
@@ -24,7 +33,7 @@ export function PostalCodeSearch() {
         setResult(null);
 
         try {
-            const data = await getPostalCode(code.replace(/-/g, ''));
+            const data = await getPostalCode(normalizedCode);
             setResult(data);
         } catch (err: any) {
             setError(err.message || '検索に失敗しました');
