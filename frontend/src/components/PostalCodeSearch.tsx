@@ -57,18 +57,18 @@ export function PostalCodeSearch() {
                 <Card className="p-6 animate-in fade-in slide-in-from-bottom-4">
                     <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
                         <div>
-                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">郵便番号</dt>
-                            <dd className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
+                            <dt className="text-sm font-medium text-slate-400 dark:text-gray-400">郵便番号</dt>
+                            <dd className="mt-1 text-lg font-semibold text-slate-50 dark:text-white">
                                 〒{result.postal_code.slice(0, 3)}-{result.postal_code.slice(3)}
                             </dd>
                         </div>
 
                         <div className="sm:col-span-2">
-                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">住所</dt>
-                            <dd className="mt-1 text-xl text-gray-900 dark:text-white">
+                            <dt className="text-sm font-medium text-slate-400 dark:text-gray-400">住所</dt>
+                            <dd className="mt-1 text-xl text-slate-50 dark:text-white">
                                 {result.prefecture} {result.city} {result.town}
                             </dd>
-                            <dd className="text-sm text-gray-500 dark:text-gray-400">
+                            <dd className="text-sm text-slate-400 dark:text-gray-400">
                                 {result.prefecture_kana} {result.city_kana} {result.town_kana}
                             </dd>
                         </div>

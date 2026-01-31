@@ -62,10 +62,10 @@ export function AddressSearch() {
                                 <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
                                     〒{item.postal_code.slice(0, 3)}-{item.postal_code.slice(3)}
                                 </p>
-                                <p className="mt-1 font-medium text-gray-900 dark:text-white">
+                                <p className="mt-1 font-medium text-slate-50 dark:text-white">
                                     {item.prefecture} {item.city} {item.town}
                                 </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                <p className="text-xs text-slate-400 dark:text-gray-400">
                                     {item.prefecture_kana} {item.city_kana} {item.town_kana}
                                 </p>
                             </div>
