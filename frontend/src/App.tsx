@@ -14,17 +14,17 @@ function App() {
       <div className="w-[800px] h-[800px] bg-blue-500/10 rounded-full blur-[120px] absolute -top-40 -left-20 pointer-events-none animate-pulse-slow" />
       <div className="w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-[100px] absolute -bottom-20 -right-20 pointer-events-none" />
 
-      <div className="max-w-xl w-full space-y-8 relative z-10 px-4">
-        <header className="text-center space-y-6">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 shadow-2xl shadow-blue-900/20 mb-2 relative group overflow-hidden">
+      <div className="max-w-xl w-full space-y-6 md:space-y-8 relative z-10 px-4">
+        <header className="text-center space-y-4 md:space-y-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 shadow-2xl shadow-blue-900/20 mb-2 relative group overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <MapPin className="w-10 h-10 text-blue-500 drop-shadow-lg" />
+            <MapPin className="w-8 h-8 md:w-10 md:h-10 text-blue-500 drop-shadow-lg" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent tracking-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent tracking-tight">
               PostcodeJP
             </h1>
-            <p className="text-slate-400 text-lg font-medium">
+            <p className="text-slate-400 text-sm sm:text-base md:text-lg font-medium">
               日本郵便データを活用した<br className="sm:hidden" />高速な郵便番号検索
             </p>
           </div>
@@ -40,8 +40,9 @@ function App() {
                 activeTab === 'postal' ? "bg-slate-800 text-white shadow-lg border-slate-700" : "text-slate-400 hover:text-white"
               )}
             >
-              <MapPin className="w-4 h-4 mr-2" />
-              郵便番号から
+              <MapPin className="w-4 h-4 mr-1.5 md:mr-2" />
+              <span className="text-xs sm:text-sm md:text-base">郵便番号</span>
+              <span className="hidden sm:inline text-xs sm:text-sm md:text-base">から</span>
             </Button>
             <Button
               variant={activeTab === 'address' ? 'secondary' : 'ghost'}
@@ -51,8 +52,9 @@ function App() {
                 activeTab === 'address' ? "bg-slate-800 text-white shadow-lg border-slate-700" : "text-slate-400 hover:text-white"
               )}
             >
-              <Search className="w-4 h-4 mr-2" />
-              住所から
+              <Search className="w-4 h-4 mr-1.5 md:mr-2" />
+              <span className="text-xs sm:text-sm md:text-base">住所</span>
+              <span className="hidden sm:inline text-xs sm:text-sm md:text-base">から</span>
             </Button>
           </div>
         </Card>
