@@ -54,7 +54,7 @@ def get_by_postal_code(
     "/postal-codes/search",
     response_model=PostalCodeListResponse,
     summary="住所から郵便番号を検索",
-    description="住所の一部（都道府県名、市区町村名、町域名）をキーワードとして検索します。"
+    description="住所の一部（都道府県名、市区町村名、町域名）をキーワードとして検索します。スペース区切りでAND検索、スペースなしの連結住所（例：町田市小山町）も検索可能です。"
 )
 def search_postal_codes(
     q: str = Query(..., min_length=1, description="検索キーワード"),
@@ -63,19 +63,52 @@ def search_postal_codes(
     db: Session = Depends(get_db)
 ):
     """Search postal codes by address keyword."""
-    # Build search query
-    search_term = f"%{q}%"
+    # Normalize spaces
+    q = q.replace("　", " ").strip()
+    keywords = q.split()
     
-    query = db.query(PostalCode).filter(
-        or_(
+    if not keywords:
+        return PostalCodeListResponse(total=0, items=[])
+
+    from sqlalchemy import and_
+
+    criteria = []
+    
+    # If single keyword, it might be a concatenated address (e.g. "町田市小山町")
+    # So we check individual columns AND their concatenation
+    if len(keywords) == 1:
+        keyword = keywords[0]
+        search_term = f"%{keyword}%"
+        criteria.append(or_(
             PostalCode.prefecture.ilike(search_term),
             PostalCode.city.ilike(search_term),
             PostalCode.town.ilike(search_term),
             PostalCode.prefecture_kana.ilike(search_term),
             PostalCode.city_kana.ilike(search_term),
             PostalCode.town_kana.ilike(search_term),
-        )
-    )
+            # Concatenated search for Kanji
+            func.concat(PostalCode.prefecture, PostalCode.city, PostalCode.town).ilike(search_term),
+            # Concatenated search for Kana
+            func.concat(PostalCode.prefecture_kana, PostalCode.city_kana, PostalCode.town_kana).ilike(search_term)
+        ))
+    else:
+        # Multiple keywords -> AND matching across any field
+        for keyword in keywords:
+            search_term = f"%{keyword}%"
+            criteria.append(or_(
+                PostalCode.prefecture.ilike(search_term),
+                PostalCode.city.ilike(search_term),
+                PostalCode.town.ilike(search_term),
+                PostalCode.prefecture_kana.ilike(search_term),
+                PostalCode.city_kana.ilike(search_term),
+                PostalCode.town_kana.ilike(search_term)
+                # Note: We usually don't need concat search for split keywords effectively,
+                # but if a user types "町田市 小山町" they are matching separate fields.
+                # If they typed "町田市小 山町" (weird split), concat won't help unless we concat fields for every keyword check.
+                # For simplicity/performance, standard AND-OR logic is usually enough for spaced keywords.
+            ))
+            
+    query = db.query(PostalCode).filter(and_(*criteria))
     
     total = query.count()
     items = query.offset(offset).limit(limit).all()
