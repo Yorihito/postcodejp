@@ -121,8 +121,26 @@ app.http("searchPostalCodes", {
         try {
             const results: any[] = [];
 
-            // 都道府県(完全一致) または 市区町村(前方一致) で検索
-            const filter = `prefecture eq '${query}' or (city ge '${query}' and city lt '${query}\uffff')`;
+            // スペース区切りで複数キーワードに対応 (AND検索)
+            // 都道府県、市区町村、町域のいずれかに前方一致すればヒット (OR検索)
+            const terms = query.trim().split(/\s+/).filter(t => t.length > 0);
+
+            if (terms.length === 0) {
+                return jsonResponse({ total: 0, items: [] });
+            }
+
+            const termFilters = terms.map(term => {
+                // シングルクォートをエスケープ
+                const t = term.replace(/'/g, "''");
+                return `(
+                    (prefecture ge '${t}' and prefecture lt '${t}\uffff') or 
+                    (city ge '${t}' and city lt '${t}\uffff') or 
+                    (town ge '${t}' and town lt '${t}\uffff')
+                )`;
+            });
+
+            // 全てのキーワード条件を満たす (AND)
+            const filter = termFilters.join(' and ');
             const { postalCodes } = getTables();
             const entities = postalCodes.listEntities({
                 queryOptions: { filter },
