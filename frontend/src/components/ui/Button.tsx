@@ -7,7 +7,6 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: 'primary' | 'secondary' | 'ghost';
     variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'default';
     size?: 'sm' | 'md' | 'lg';
 }

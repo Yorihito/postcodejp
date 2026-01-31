@@ -43,6 +43,7 @@ function App() {
               <MapPin className="w-4 h-4 mr-2" />
               郵便番号から
             </Button>
+            <Button
               variant={activeTab === 'address' ? 'secondary' : 'ghost'}
               onClick={() => setActiveTab('address')}
               className={cn(
