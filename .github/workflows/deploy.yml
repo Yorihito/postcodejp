@@ -33,6 +33,7 @@ jobs:
           npm run build --if-present
           npm test --if-present
           npm prune --production
+          zip -r ../deployment.zip .
           popd
 
       - name: 'Run Azure Functions Action'
@@ -40,5 +41,5 @@ jobs:
         id: fa
         with:
           app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
-          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          package: 'deployment.zip'
           publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
