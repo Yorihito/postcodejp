@@ -8,15 +8,18 @@ export function cn(...inputs: ClassValue[]) {
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: 'primary' | 'secondary' | 'ghost';
+    variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'default';
     size?: 'sm' | 'md' | 'lg';
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className, variant = 'primary', size = 'md', ...props }, ref) => {
         const variants = {
-            primary: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 active:scale-95 shadow-lg shadow-blue-500/25 border border-transparent',
-            secondary: 'bg-white text-slate-700 hover:bg-gray-50 border border-gray-200 shadow-sm dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700',
-            ghost: 'bg-transparent hover:bg-blue-50 text-blue-600 dark:text-blue-400 dark:hover:bg-blue-900/20',
+            default: "bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-900/20 active:scale-[0.98]",
+            secondary: "bg-slate-800 text-slate-100 hover:bg-slate-700 border border-slate-700",
+            ghost: "hover:bg-white/5 text-slate-400 hover:text-white",
+            primary: "bg-white text-slate-900 shadow-md hover:bg-slate-50 font-medium",
+            outline: "border-2 border-slate-700 bg-transparent hover:bg-slate-800 text-slate-300",
         };
 
         const sizes = {
