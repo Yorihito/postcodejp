@@ -4,28 +4,34 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { TableClient, AzureNamedKeyCredential } from "@azure/data-tables";
 
-// Table Storage 接続
-const accountName = process.env.STORAGE_ACCOUNT_NAME || "stpostcodejp";
-const accountKey = process.env.STORAGE_ACCOUNT_KEY || "";
-const credential = new AzureNamedKeyCredential(accountName, accountKey);
+// Table Storage 接続 (Lazy Initialization)
+let tables: {
+    postalCodes: TableClient;
+    offices: TableClient;
+    prefectures: TableClient;
+} | null = null;
 
-const postalCodesTable = new TableClient(
-    `https://${accountName}.table.core.windows.net`,
-    "PostalCodes",
-    credential
-);
+function getTables() {
+    if (tables) return tables;
 
-const officesTable = new TableClient(
-    `https://${accountName}.table.core.windows.net`,
-    "Offices",
-    credential
-);
+    const accountName = process.env.STORAGE_ACCOUNT_NAME || "stpostcodejp";
+    const accountKey = process.env.STORAGE_ACCOUNT_KEY;
 
-const prefecturesTable = new TableClient(
-    `https://${accountName}.table.core.windows.net`,
-    "Prefectures",
-    credential
-);
+    if (!accountKey) {
+        throw new Error("STORAGE_ACCOUNT_KEY is not set");
+    }
+
+    const credential = new AzureNamedKeyCredential(accountName, accountKey);
+    const baseUrl = `https://${accountName}.table.core.windows.net`;
+
+    tables = {
+        postalCodes: new TableClient(baseUrl, "PostalCodes", credential),
+        offices: new TableClient(baseUrl, "Offices", credential),
+        prefectures: new TableClient(baseUrl, "Prefectures", credential),
+    };
+
+    return tables;
+}
 
 // CORS headers
 const corsHeaders = {
@@ -54,7 +60,7 @@ function errorResponse(message: string, status = 400): HttpResponseInit {
 app.http("getPostalCode", {
     methods: ["GET", "OPTIONS"],
     authLevel: "anonymous",
-    route: "postal-codes/{postalCode}",
+    route: "postal-codes/{postalCode:regex(^[0-9].*)}",
     handler: async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
         if (request.method === "OPTIONS") {
             return { status: 204, headers: corsHeaders };
@@ -71,7 +77,8 @@ app.http("getPostalCode", {
             const partitionKey = postalCode.substring(0, 3);
             const rowKey = postalCode.substring(3);
 
-            const entity = await postalCodesTable.getEntity(partitionKey, rowKey);
+            const { postalCodes } = getTables();
+            const entity = await postalCodes.getEntity(partitionKey, rowKey);
 
             return jsonResponse({
                 postal_code: postalCode,
@@ -114,9 +121,10 @@ app.http("searchPostalCodes", {
         try {
             const results: any[] = [];
 
-            // 都道府県または市区町村で検索
-            const filter = `prefecture eq '${query}' or city eq '${query}'`;
-            const entities = postalCodesTable.listEntities({
+            // 都道府県(完全一致) または 市区町村(前方一致) で検索
+            const filter = `prefecture eq '${query}' or (city ge '${query}' and city lt '${query}\uffff')`;
+            const { postalCodes } = getTables();
+            const entities = postalCodes.listEntities({
                 queryOptions: { filter },
             });
 
@@ -155,7 +163,8 @@ app.http("getPrefectures", {
 
         try {
             const results: any[] = [];
-            const entities = prefecturesTable.listEntities();
+            const { prefectures } = getTables();
+            const entities = prefectures.listEntities();
 
             for await (const entity of entities) {
                 results.push({
@@ -180,7 +189,7 @@ app.http("getPrefectures", {
 app.http("getOffice", {
     methods: ["GET", "OPTIONS"],
     authLevel: "anonymous",
-    route: "offices/{postalCode}",
+    route: "offices/{postalCode:regex(^[0-9].*)}",
     handler: async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
         if (request.method === "OPTIONS") {
             return { status: 204, headers: corsHeaders };
@@ -196,7 +205,8 @@ app.http("getOffice", {
             const partitionKey = postalCode.substring(0, 3);
             const rowKey = postalCode.substring(3);
 
-            const entity = await officesTable.getEntity(partitionKey, rowKey);
+            const { offices } = getTables();
+            const entity = await offices.getEntity(partitionKey, rowKey);
 
             return jsonResponse({
                 postal_code: postalCode,
