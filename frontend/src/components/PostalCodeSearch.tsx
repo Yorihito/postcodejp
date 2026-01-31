@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { getPostalCode, type PostalCode } from '../api/client';
+import { CopyButton } from './ui/CopyButton';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Card } from './ui/Card';
@@ -65,8 +66,9 @@ export function PostalCodeSearch() {
 
                         <div className="sm:col-span-2">
                             <dt className="text-sm font-medium text-slate-400 dark:text-gray-400">住所</dt>
-                            <dd className="mt-1 text-xl text-slate-50 dark:text-white">
-                                {result.prefecture} {result.city} {result.town}
+                            <dd className="mt-1 flex items-center gap-2 text-xl text-slate-50 dark:text-white">
+                                <span>{result.prefecture} {result.city} {result.town}</span>
+                                <CopyButton text={`${result.prefecture} ${result.city} ${result.town}`} />
                             </dd>
                             <dd className="text-sm text-slate-400 dark:text-gray-400">
                                 {result.prefecture_kana} {result.city_kana} {result.town_kana}

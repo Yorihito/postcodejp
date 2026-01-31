@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { searchPostalCodes, type PostalCode } from '../api/client';
+import { CopyButton } from './ui/CopyButton';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Card } from './ui/Card';
@@ -59,9 +60,15 @@ export function AddressSearch() {
                     <Card key={item.postal_code} className="p-4 hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start">
                             <div>
-                                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                                    〒{item.postal_code.slice(0, 3)}-{item.postal_code.slice(3)}
-                                </p>
+                                <div className="flex items-center gap-2">
+                                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                                        〒{item.postal_code.slice(0, 3)}-{item.postal_code.slice(3)}
+                                    </p>
+                                    <CopyButton
+                                        text={`${item.postal_code.slice(0, 3)}-${item.postal_code.slice(3)}`}
+                                        className="h-6 w-6"
+                                    />
+                                </div>
                                 <p className="mt-1 font-medium text-slate-50 dark:text-white">
                                     {item.prefecture} {item.city} {item.town}
                                 </p>
