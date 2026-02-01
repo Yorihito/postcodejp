@@ -3,6 +3,7 @@ import { SearchInterface } from '../SearchInterface';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Link } from 'react-router-dom';
+import { RetroCounter } from '../ui/RetroCounter';
 
 export function LandingPage() {
     return (
@@ -108,7 +109,10 @@ export function LandingPage() {
                 </div>
             </section>
 
-            <footer className="py-8 text-center text-slate-600 border-t border-slate-800 bg-slate-900">
+            <footer className="py-12 text-center text-slate-600 border-t border-slate-800 bg-slate-900">
+                <div className="flex flex-col items-center gap-6 mb-8">
+                    <RetroCounter />
+                </div>
                 <div className="flex items-center justify-center gap-2 mb-4">
                     <MapPin className="w-5 h-5" />
                     <span className="font-bold text-slate-400">PostcodeJP</span>

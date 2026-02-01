@@ -9,6 +9,7 @@ let tables: {
     postalCodes: TableClient;
     offices: TableClient;
     prefectures: TableClient;
+    system: TableClient;
 } | null = null;
 
 function getTables() {
@@ -28,6 +29,7 @@ function getTables() {
         postalCodes: new TableClient(baseUrl, "PostalCodes", credential),
         offices: new TableClient(baseUrl, "Offices", credential),
         prefectures: new TableClient(baseUrl, "Prefectures", credential),
+        system: new TableClient(baseUrl, "System", credential),
     };
 
     return tables;
@@ -258,13 +260,58 @@ app.http("getOffice", {
                 city: entity.city,
                 office_name: entity.officeName,
                 office_kana: entity.officeKana,
-                address_detail: entity.addressDetail,
             });
         } catch (error: any) {
             if (error.statusCode === 404) {
                 return errorResponse(`郵便番号 ${postalCode} に該当する事業所が見つかりません`, 404);
             }
             context.error("Error fetching office:", error);
+            return errorResponse("Internal server error", 500);
+        }
+    },
+});
+
+/**
+ * GET /api/counter
+ * Increments and returns the visitor count
+ */
+app.http("getCounter", {
+    methods: ["GET", "OPTIONS"],
+    authLevel: "anonymous",
+    route: "counter",
+    handler: async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
+        if (request.method === "OPTIONS") {
+            return { status: 204, headers: corsHeaders };
+        }
+
+        try {
+            const { system } = getTables();
+            const partitionKey = "Visitor";
+            const rowKey = "Count";
+
+            let count = 0;
+            try {
+                const entity = await system.getEntity<{ count: number }>(partitionKey, rowKey);
+                count = entity.count || 0;
+            } catch (error: any) {
+                if (error.statusCode !== 404) {
+                    throw error;
+                }
+                // If not found, start from 0
+            }
+
+            count++;
+
+            await system.upsertEntity({
+                partitionKey,
+                rowKey,
+                count,
+            });
+
+            return jsonResponse({ count });
+        } catch (error) {
+            context.error("Error updating counter:", error);
+            // Fallback to a random number or error if DB fails, but let's return error for now
             return errorResponse("Internal server error", 500);
         }
     },
@@ -292,6 +339,7 @@ app.http("getStats", {
                 "GET /api/prefectures",
                 "GET /api/offices/{postalCode}",
                 "GET /api/stats",
+                "GET /api/counter",
             ],
         });
     },
