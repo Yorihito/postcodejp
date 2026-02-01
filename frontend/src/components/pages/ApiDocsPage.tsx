@@ -9,7 +9,7 @@ export function ApiDocsPage() {
             <div className="space-y-4">
                 <h1 className="text-3xl md:text-4xl font-bold">API ドキュメント</h1>
                 <p className="text-slate-400 text-lg">
-                    PostcodeJP APIの仕様書です。すべてのエンドポイントはパブリックにアクセス可能で、認証キーは不要です（レート制限あり）。
+                    PostcodeJP APIの仕様書です。すべてのエンドポイントはパブリックにアクセス可能で、認証キーは不要です。
                 </p>
             </div>
 
