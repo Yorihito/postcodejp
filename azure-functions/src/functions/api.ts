@@ -161,11 +161,6 @@ app.http("searchPostalCodes", {
             }
 
             const termFilters = sanitizedTerms.map(term => {
-                // シングルクォートをエスケープ (already sanitized but double-check)
-
-
-
-            const termFilters = terms.map(term => {
                 // シングルクォートをエスケープ
                 const t = term.replace(/'/g, "''");
 
