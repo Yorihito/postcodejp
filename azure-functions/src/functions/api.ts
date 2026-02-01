@@ -363,18 +363,39 @@ app.http("getStats", {
             return { status: 204, headers: corsHeaders };
         }
 
-        return jsonResponse({
-            name: "PostcodeJP API",
-            version: "1.0.0",
-            runtime: "Azure Functions",
-            endpoints: [
-                "GET /api/postal-codes/{postalCode}",
-                "GET /api/postal-codes/search?q=...",
-                "GET /api/prefectures",
-                "GET /api/offices/{postalCode}",
-                "GET /api/stats",
-                "GET /api/counter",
-            ],
-        });
+
+        try {
+            const { system } = getTables();
+            let visitorCount = 0;
+            try {
+                const entity = await system.getEntity<{ count: number }>("Visitor", "Count");
+                visitorCount = entity.count || 0;
+            } catch {
+                // Ignore error if table/entity doesn't exist yet
+            }
+
+            return jsonResponse({
+                name: "PostcodeJP API",
+                version: "1.0.0",
+                runtime: "Azure Functions",
+                visitor_count: visitorCount,
+                endpoints: [
+                    "GET /api/postal-codes/{postalCode}",
+                    "GET /api/postal-codes/search?q=...",
+                    "GET /api/prefectures",
+                    "GET /api/offices/{postalCode}",
+                    "GET /api/stats",
+                    "GET /api/counter",
+                ],
+            });
+        } catch (error) {
+            context.error("Error fetching stats:", error);
+            // Fallback response
+            return jsonResponse({
+                name: "PostcodeJP API",
+                version: "1.0.0",
+                error: "Failed to fetch stats"
+            });
+        }
     },
 });
