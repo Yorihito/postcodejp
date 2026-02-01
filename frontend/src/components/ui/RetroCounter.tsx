@@ -10,8 +10,8 @@ export function RetroCounter() {
         // ローカル開発時はモック動作または実際のエンドポイントへプロキシ
         const fetchCount = async () => {
             try {
-                const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://postcodejp.azurestaticapps.net/api";
-                const res = await fetch(`${API_BASE_URL}/counter`);
+                // use relative path which works with SWA proxy
+                const res = await fetch(`/api/counter`);
                 if (res.ok) {
                     const data = await res.json();
                     setCount(data.count);

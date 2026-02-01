@@ -294,10 +294,20 @@ app.http("getCounter", {
                 const entity = await system.getEntity<{ count: number }>(partitionKey, rowKey);
                 count = entity.count || 0;
             } catch (error: any) {
-                if (error.statusCode !== 404) {
+                if (error.statusCode === 404) {
+                    // Table might not exist, try to create it
+                    try {
+                        await system.createTable();
+                    } catch (createError: any) {
+                        // Ignore if already exists (Conflict)
+                        if (createError.statusCode !== 409) {
+                            context.error("Failed to create System table:", createError);
+                        }
+                    }
+                    // Start from 0
+                } else {
                     throw error;
                 }
-                // If not found, start from 0
             }
 
             count++;
