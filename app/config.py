@@ -27,6 +27,14 @@ class Settings(BaseSettings):
     
     # Data directory for temporary files
     data_dir: str = "/tmp/postcodejp"
+    
+    # CORS allowed origins (comma-separated)
+    cors_origins: str = ""
+    
+    # Admin API authentication
+    admin_api_key: str = ""
+    # Set to True to require admin authentication (recommended for production)
+    require_admin_auth: bool = True
 
     class Config:
         env_file = ".env"

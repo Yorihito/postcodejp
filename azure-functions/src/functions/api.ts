@@ -4,6 +4,20 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { TableClient, AzureNamedKeyCredential } from "@azure/data-tables";
 
+// Allowed characters for search queries
+// Includes: Unicode letters (\p{L}), digits (\p{N}), Japanese-specific ranges,
+// whitespace, and hyphens
+const ALLOWED_SEARCH_PATTERN = /[^\p{L}\p{N}\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf\s\-]/gu;
+
+/**
+ * Sanitize search query to prevent injection attacks.
+ * Allows only Japanese characters (hiragana, katakana, kanji), 
+ * alphanumeric characters, common punctuation, and whitespace.
+ */
+function sanitizeSearchTerm(term: string): string {
+    return term.replace(ALLOWED_SEARCH_PATTERN, '');
+}
+
 // Table Storage 接続 (Lazy Initialization)
 let tables: {
     postalCodes: TableClient;
@@ -139,6 +153,15 @@ app.http("searchPostalCodes", {
                 return jsonResponse({ total: 0, items: [] });
             }
 
+            // Validate terms to prevent injection
+            const sanitizedTerms = terms.map(term => sanitizeSearchTerm(term)).filter(t => t.length > 0);
+
+            if (sanitizedTerms.length === 0) {
+                return errorResponse("検索キーワードが無効です");
+            }
+
+            const termFilters = sanitizedTerms.map(term => {
+                // シングルクォートをエスケープ (already sanitized but double-check)
 
 
 
@@ -166,8 +189,8 @@ app.http("searchPostalCodes", {
 
             // 連結キーワード（例：町田市小山町）のヒューリスティック分割対応
             // スペースがなく、特定の接尾辞が含まれる場合に分割を試みる
-            if (terms.length === 1) {
-                const originalTerm = terms[0];
+            if (sanitizedTerms.length === 1) {
+                const originalTerm = sanitizedTerms[0];
                 // 接尾辞の後にスペースを挿入して分割
                 // 少なくとも1文字以上の先行文字がある場合のみ分割（"市川市"の先頭"市"などを分割しないため）
                 const splitQuery = originalTerm.replace(/(.{1,}[都道府県市区町村郡])(?=.)/g, "$1 ").trim();

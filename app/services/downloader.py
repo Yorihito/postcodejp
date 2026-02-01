@@ -81,7 +81,7 @@ class Downloader:
                 return None
     
     def extract_zip(self, zip_path: Path) -> Optional[Path]:
-        """Extract a ZIP file.
+        """Extract a ZIP file safely to prevent path traversal attacks.
         
         Args:
             zip_path: Path to ZIP file
@@ -94,6 +94,15 @@ class Downloader:
         
         try:
             with zipfile.ZipFile(zip_path, "r") as zf:
+                # Validate all file paths before extraction to prevent path traversal
+                for member in zf.namelist():
+                    # Normalize path and check if it's safe
+                    member_path = (extract_dir / member).resolve()
+                    if not str(member_path).startswith(str(extract_dir.resolve())):
+                        logger.error(f"Potential path traversal detected in zip member: {member}")
+                        raise ValueError(f"Unsafe file path in zip archive: {member}")
+                
+                # Safe to extract all files
                 zf.extractall(extract_dir)
             logger.info(f"Extracted to {extract_dir}")
             return extract_dir

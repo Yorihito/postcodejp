@@ -107,6 +107,27 @@ export AZURE_STORAGE_CONNECTION_STRING="..."
 python3 azure-functions/scripts/import_to_table.py
 ```
 
+## セキュリティ
+
+このプロジェクトではセキュリティを重視しています。詳細は [SECURITY.md](SECURITY.md) を参照してください。
+
+### 重要な設定
+
+本番環境では以下の環境変数を必ず設定してください：
+
+```bash
+# Admin API認証
+ADMIN_API_KEY=your-strong-api-key
+REQUIRE_ADMIN_AUTH=True
+
+# CORS設定
+CORS_ORIGINS=https://yourdomain.com
+```
+
+### セキュリティ脆弱性の報告
+
+セキュリティ上の問題を発見した場合は、公開のIssueを作成せず、プロジェクトメンテナーに直接連絡してください。
+
 ## ライセンス
 
 MIT License
