@@ -56,6 +56,14 @@ function errorResponse(message: string, status = 400): HttpResponseInit {
     return jsonResponse({ error: message }, status);
 }
 
+// Helper to convert Hiragana to Katakana
+function hiraganaToKatakana(str: string): string {
+    return str.replace(/[\u3041-\u3096]/g, function (match) {
+        var chr = match.charCodeAt(0) + 0x60;
+        return String.fromCharCode(chr);
+    });
+}
+
 /**
  * GET /api/postal-codes/{postalCode}
  */
@@ -131,13 +139,24 @@ app.http("searchPostalCodes", {
                 return jsonResponse({ total: 0, items: [] });
             }
 
+
+
+
             const termFilters = terms.map(term => {
                 // シングルクォートをエスケープ
                 const t = term.replace(/'/g, "''");
+
+                // カタカナ変換（読み仮名検索用）
+                const kanaT = hiraganaToKatakana(t).replace(/'/g, "''");
+
+                // 漢字フィールド(prefecture, city, town) OR カタカナフィールド(prefectureKana, cityKana, townKana)
                 return `(
                     (prefecture ge '${t}' and prefecture lt '${t}\uffff') or 
                     (city ge '${t}' and city lt '${t}\uffff') or 
-                    (town ge '${t}' and town lt '${t}\uffff')
+                    (town ge '${t}' and town lt '${t}\uffff') or
+                    (prefectureKana ge '${kanaT}' and prefectureKana lt '${kanaT}\uffff') or 
+                    (cityKana ge '${kanaT}' and cityKana lt '${kanaT}\uffff') or 
+                    (townKana ge '${kanaT}' and townKana lt '${kanaT}\uffff')
                 )`;
             });
 
@@ -158,10 +177,15 @@ app.http("searchPostalCodes", {
                 if (splitTerms.length > 1 && splitTerms.length < 6) { // 暴走防止のため制限
                     const splitFilters = splitTerms.map(term => {
                         const t = term.replace(/'/g, "''");
+                        const kanaT = hiraganaToKatakana(t).replace(/'/g, "''");
+
                         return `(
                             (prefecture ge '${t}' and prefecture lt '${t}\uffff') or 
                             (city ge '${t}' and city lt '${t}\uffff') or 
-                            (town ge '${t}' and town lt '${t}\uffff')
+                            (town ge '${t}' and town lt '${t}\uffff') or
+                            (prefectureKana ge '${kanaT}' and prefectureKana lt '${kanaT}\uffff') or 
+                            (cityKana ge '${kanaT}' and cityKana lt '${kanaT}\uffff') or 
+                            (townKana ge '${kanaT}' and townKana lt '${kanaT}\uffff')
                         )`;
                     });
                     const secondaryFilter = splitFilters.join(' and ');
