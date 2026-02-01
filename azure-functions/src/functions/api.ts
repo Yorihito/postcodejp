@@ -23,6 +23,7 @@ let tables: {
     postalCodes: TableClient;
     offices: TableClient;
     prefectures: TableClient;
+    system: TableClient;
 } | null = null;
 
 function getTables() {
@@ -42,6 +43,7 @@ function getTables() {
         postalCodes: new TableClient(baseUrl, "PostalCodes", credential),
         offices: new TableClient(baseUrl, "Offices", credential),
         prefectures: new TableClient(baseUrl, "Prefectures", credential),
+        system: new TableClient(baseUrl, "System", credential),
     };
 
     return tables;
@@ -66,6 +68,14 @@ function jsonResponse(data: unknown, status = 200): HttpResponseInit {
 // Error response helper
 function errorResponse(message: string, status = 400): HttpResponseInit {
     return jsonResponse({ error: message }, status);
+}
+
+// Helper to convert Hiragana to Katakana
+function hiraganaToKatakana(str: string): string {
+    return str.replace(/[\u3041-\u3096]/g, function (match) {
+        var chr = match.charCodeAt(0) + 0x60;
+        return String.fromCharCode(chr);
+    });
 }
 
 /**
@@ -152,11 +162,24 @@ app.http("searchPostalCodes", {
 
             const termFilters = sanitizedTerms.map(term => {
                 // シングルクォートをエスケープ (already sanitized but double-check)
+
+
+
+            const termFilters = terms.map(term => {
+                // シングルクォートをエスケープ
                 const t = term.replace(/'/g, "''");
+
+                // カタカナ変換（読み仮名検索用）
+                const kanaT = hiraganaToKatakana(t).replace(/'/g, "''");
+
+                // 漢字フィールド(prefecture, city, town) OR カタカナフィールド(prefectureKana, cityKana, townKana)
                 return `(
                     (prefecture ge '${t}' and prefecture lt '${t}\uffff') or 
                     (city ge '${t}' and city lt '${t}\uffff') or 
-                    (town ge '${t}' and town lt '${t}\uffff')
+                    (town ge '${t}' and town lt '${t}\uffff') or
+                    (prefectureKana ge '${kanaT}' and prefectureKana lt '${kanaT}\uffff') or 
+                    (cityKana ge '${kanaT}' and cityKana lt '${kanaT}\uffff') or 
+                    (townKana ge '${kanaT}' and townKana lt '${kanaT}\uffff')
                 )`;
             });
 
@@ -177,10 +200,15 @@ app.http("searchPostalCodes", {
                 if (splitTerms.length > 1 && splitTerms.length < 6) { // 暴走防止のため制限
                     const splitFilters = splitTerms.map(term => {
                         const t = term.replace(/'/g, "''");
+                        const kanaT = hiraganaToKatakana(t).replace(/'/g, "''");
+
                         return `(
                             (prefecture ge '${t}' and prefecture lt '${t}\uffff') or 
                             (city ge '${t}' and city lt '${t}\uffff') or 
-                            (town ge '${t}' and town lt '${t}\uffff')
+                            (town ge '${t}' and town lt '${t}\uffff') or
+                            (prefectureKana ge '${kanaT}' and prefectureKana lt '${kanaT}\uffff') or 
+                            (cityKana ge '${kanaT}' and cityKana lt '${kanaT}\uffff') or 
+                            (townKana ge '${kanaT}' and townKana lt '${kanaT}\uffff')
                         )`;
                     });
                     const secondaryFilter = splitFilters.join(' and ');
@@ -279,13 +307,68 @@ app.http("getOffice", {
                 city: entity.city,
                 office_name: entity.officeName,
                 office_kana: entity.officeKana,
-                address_detail: entity.addressDetail,
             });
         } catch (error: any) {
             if (error.statusCode === 404) {
                 return errorResponse(`郵便番号 ${postalCode} に該当する事業所が見つかりません`, 404);
             }
             context.error("Error fetching office:", error);
+            return errorResponse("Internal server error", 500);
+        }
+    },
+});
+
+/**
+ * GET /api/counter
+ * Increments and returns the visitor count
+ */
+app.http("getCounter", {
+    methods: ["GET", "OPTIONS"],
+    authLevel: "anonymous",
+    route: "counter",
+    handler: async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
+        if (request.method === "OPTIONS") {
+            return { status: 204, headers: corsHeaders };
+        }
+
+        try {
+            const { system } = getTables();
+            const partitionKey = "Visitor";
+            const rowKey = "Count";
+
+            let count = 0;
+            try {
+                const entity = await system.getEntity<{ count: number }>(partitionKey, rowKey);
+                count = entity.count || 0;
+            } catch (error: any) {
+                if (error.statusCode === 404) {
+                    // Table might not exist, try to create it
+                    try {
+                        await system.createTable();
+                    } catch (createError: any) {
+                        // Ignore if already exists (Conflict)
+                        if (createError.statusCode !== 409) {
+                            context.error("Failed to create System table:", createError);
+                        }
+                    }
+                    // Start from 0
+                } else {
+                    throw error;
+                }
+            }
+
+            count++;
+
+            await system.upsertEntity({
+                partitionKey,
+                rowKey,
+                count,
+            });
+
+            return jsonResponse({ count });
+        } catch (error) {
+            context.error("Error updating counter:", error);
+            // Fallback to a random number or error if DB fails, but let's return error for now
             return errorResponse("Internal server error", 500);
         }
     },
@@ -303,17 +386,39 @@ app.http("getStats", {
             return { status: 204, headers: corsHeaders };
         }
 
-        return jsonResponse({
-            name: "PostcodeJP API",
-            version: "1.0.0",
-            runtime: "Azure Functions",
-            endpoints: [
-                "GET /api/postal-codes/{postalCode}",
-                "GET /api/postal-codes/search?q=...",
-                "GET /api/prefectures",
-                "GET /api/offices/{postalCode}",
-                "GET /api/stats",
-            ],
-        });
+
+        try {
+            const { system } = getTables();
+            let visitorCount = 0;
+            try {
+                const entity = await system.getEntity<{ count: number }>("Visitor", "Count");
+                visitorCount = entity.count || 0;
+            } catch {
+                // Ignore error if table/entity doesn't exist yet
+            }
+
+            return jsonResponse({
+                name: "PostcodeJP API",
+                version: "1.0.0",
+                runtime: "Azure Functions",
+                visitor_count: visitorCount,
+                endpoints: [
+                    "GET /api/postal-codes/{postalCode}",
+                    "GET /api/postal-codes/search?q=...",
+                    "GET /api/prefectures",
+                    "GET /api/offices/{postalCode}",
+                    "GET /api/stats",
+                    "GET /api/counter",
+                ],
+            });
+        } catch (error) {
+            context.error("Error fetching stats:", error);
+            // Fallback response
+            return jsonResponse({
+                name: "PostcodeJP API",
+                version: "1.0.0",
+                error: "Failed to fetch stats"
+            });
+        }
     },
 });
