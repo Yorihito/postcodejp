@@ -51,11 +51,24 @@ export async function getPrefectures(): Promise<Prefecture[]> {
     return res.json();
 }
 
+
 export async function getOffice(code: string): Promise<Office> {
     const res = await fetch(`${API_BASE_URL}/offices/${code}`);
     if (!res.ok) {
         if (res.status === 404) throw new Error("事業所が見つかりません");
         throw new Error("APIエラーが発生しました");
     }
+    return res.json();
+}
+
+export async function getStats(): Promise<{ last_updated: string | null }> {
+    const res = await fetch(`${API_BASE_URL}/stats`);
+    if (!res.ok) return { last_updated: null };
+    return res.json();
+}
+
+export async function getVisitorCount(): Promise<{ count: number }> {
+    const res = await fetch(`${API_BASE_URL}/counter`);
+    if (!res.ok) throw new Error("カウンタの取得に失敗しました");
     return res.json();
 }

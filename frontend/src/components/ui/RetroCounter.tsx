@@ -1,26 +1,17 @@
 import { useEffect, useState } from 'react';
 import { cn } from './Button';
+import { getVisitorCount } from '../../api/client';
 
 export function RetroCounter() {
     const [count, setCount] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // API呼び出しでカウントを取得（本番環境ではAPIエンドポイントを使用）
-        // ローカル開発時はモック動作または実際のエンドポイントへプロキシ
+        // API呼び出しでカウントを取得
         const fetchCount = async () => {
             try {
-                // Use the standalone Function App URL directly because SWA api_location is not configured
-                const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://func-postcodejp.azurewebsites.net/api";
-                const res = await fetch(`${API_BASE_URL}/counter`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setCount(data.count);
-                } else {
-                    // フォールバック（APIがない場合など）
-                    console.error("Counter API error");
-                    setCount(12345);
-                }
+                const data = await getVisitorCount();
+                setCount(data.count);
             } catch (err) {
                 console.error("Counter fetch failed", err);
                 setCount(12345);

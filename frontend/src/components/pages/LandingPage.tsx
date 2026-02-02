@@ -5,13 +5,13 @@ import { Card } from '../ui/Card';
 import { Link } from 'react-router-dom';
 import { RetroCounter } from '../ui/RetroCounter';
 import { useEffect, useState } from 'react';
+import { getStats } from '../../api/client';
 
 export function LandingPage() {
     const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
     useEffect(() => {
-        fetch('/api/stats')
-            .then(res => res.json())
+        getStats()
             .then(data => {
                 if (data.last_updated) {
                     const date = new Date(data.last_updated);
@@ -118,7 +118,7 @@ export function LandingPage() {
                     </p>
                     <div className="flex justify-center">
                         <div className="bg-slate-900 rounded-lg border border-slate-800 p-4 font-mono text-sm text-slate-300 shadow-xl max-w-full overflow-x-auto">
-                            <span className="text-purple-400">curl</span> <span className="text-green-400">https://postcodejp.azurestaticapps.net/api/postal-codes/1000001</span>
+                            <span className="text-purple-400">curl</span> <span className="text-green-400">https://func-postcodejp.azurewebsites.net/api/postal-codes/1000001</span>
                         </div>
                     </div>
                 </div>
