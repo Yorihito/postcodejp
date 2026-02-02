@@ -166,6 +166,57 @@ def import_to_table_storage(connection_string: str):
     offices_table = service.get_table_client("Offices")
     prefectures_table = service.get_table_client("Prefectures")
     
+
+    
+    # Helper for batch upsert
+    def batch_upsert(table_client: TableClient, entities_generator: Generator[Dict, None, None], batch_size: int = 100):
+        buffer = []
+        current_pk = None
+        count = 0
+        
+        for entity in entities_generator:
+            pk = entity["PartitionKey"]
+            
+            # If PK changes, flush buffer
+            if current_pk is not None and pk != current_pk:
+                if buffer:
+                    try:
+                        table_client.submit_transaction(buffer)
+                    except Exception:
+                        for _, ent in buffer:
+                            try:
+                                table_client.upsert_entity(ent)
+                            except Exception:
+                                pass
+                buffer = []
+                count += 1 # Count batches approximately or update real count later
+            
+            current_pk = pk
+            buffer.append(("upsert", entity))
+            
+            # If buffer full, flush (must be same PK)
+            if len(buffer) >= batch_size:
+                try:
+                    table_client.submit_transaction(buffer)
+                except Exception:
+                    for _, ent in buffer:
+                        try:
+                            table_client.upsert_entity(ent)
+                        except Exception:
+                            pass
+                buffer = []
+        
+        # Flush remaining
+        if buffer:
+            try:
+                table_client.submit_transaction(buffer)
+            except Exception:
+                for _, ent in buffer:
+                    try:
+                        table_client.upsert_entity(ent)
+                    except Exception:
+                        pass
+
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
         
@@ -173,76 +224,52 @@ def import_to_table_storage(connection_string: str):
         print("\n=== Importing Postal Codes ===")
         utf_dir = download_and_extract(UTF_ALL_URL, temp_path / "utf")
         
-        count = 0
-        batch = []
-        seen = set()
+        # Sort or assume sorted? Japan Post CSV is usually sorted by postal code.
+        # But to be safe, we can rely on the fact that CSV comes sorted by postcode.
+        # If not, we'd need to sort, but that's memory intensive. 
+        # For now, assume sorted as per Japan Post spec.
         
-        for record in parse_utf_csv(utf_dir):
-            pc = record["postal_code"]
-            if pc in seen:
-                continue
-            seen.add(pc)
-            
-            entity = {
-                "PartitionKey": pc[:3],
-                "RowKey": pc[3:],
-                "prefecture": record["prefecture"],
-                "prefectureKana": record["prefecture_kana"],
-                "city": record["city"],
-                "cityKana": record["city_kana"],
-                "town": record["town"],
-                "townKana": record["town_kana"],
-            }
-            batch.append(("upsert", entity))
-            
-            if len(batch) >= 100:
-                try:
-                    postal_table.submit_transaction(batch)
-                except Exception as e:
-                    # Batch may have mixed partition keys, insert one by one
-                    for _, ent in batch:
-                        try:
-                            postal_table.upsert_entity(ent)
-                        except Exception:
-                            pass
-                count += len(batch)
-                batch = []
-                if count % 10000 == 0:
-                    print(f"  Imported {count} postal codes...")
-        
-        # Remaining batch
-        for _, ent in batch:
-            try:
-                postal_table.upsert_entity(ent)
-            except Exception:
-                pass
-        count += len(batch)
-        print(f"  Total: {count} postal codes")
+        def postal_code_generator():
+            seen = set()
+            for record in parse_utf_csv(utf_dir):
+                pc = record["postal_code"]
+                if pc in seen:
+                    continue
+                seen.add(pc)
+                
+                yield {
+                    "PartitionKey": pc[:3],
+                    "RowKey": pc[3:],
+                    "prefecture": record["prefecture"],
+                    "prefectureKana": record["prefecture_kana"],
+                    "city": record["city"],
+                    "cityKana": record["city_kana"],
+                    "town": record["town"],
+                    "townKana": record["town_kana"],
+                }
+
+        batch_upsert(postal_table, postal_code_generator())
+        print("  Postal Codes Import Finished")
         
         # Import offices
         print("\n=== Importing Offices ===")
         jigyosyo_dir = download_and_extract(JIGYOSYO_URL, temp_path / "jigyosyo")
         
-        count = 0
-        for record in parse_jigyosyo_csv(jigyosyo_dir):
-            pc = record["postal_code"]
-            entity = {
-                "PartitionKey": pc[:3],
-                "RowKey": pc[3:],
-                "prefecture": record["prefecture"],
-                "city": record["city"],
-                "officeName": record["office_name"],
-                "officeKana": record["office_kana"],
-                "addressDetail": record["address_detail"],
-            }
-            try:
-                offices_table.upsert_entity(entity)
-            except Exception:
-                pass
-            count += 1
-            if count % 5000 == 0:
-                print(f"  Imported {count} offices...")
-        print(f"  Total: {count} offices")
+        def office_generator():
+            for record in parse_jigyosyo_csv(jigyosyo_dir):
+                pc = record["postal_code"]
+                yield {
+                    "PartitionKey": pc[:3],
+                    "RowKey": pc[3:],
+                    "prefecture": record["prefecture"],
+                    "city": record["city"],
+                    "officeName": record["office_name"],
+                    "officeKana": record["office_kana"],
+                    "addressDetail": record["address_detail"],
+                }
+
+        batch_upsert(offices_table, office_generator())
+        print("  Offices Import Finished")
         
         # Import prefectures
         print("\n=== Importing Prefectures ===")
