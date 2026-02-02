@@ -98,7 +98,53 @@ def download_and_extract(url: str, temp_dir: Path) -> tuple[Path, str]:
     return extract_dir, last_modified
 
 
-# ... (parse_utf_csv and parse_jigyosyo_csv remain unchanged) ...
+
+def parse_utf_csv(directory: Path) -> Generator[Dict[str, Any], None, None]:
+    """Parse UTF-8 postal code CSV files."""
+    csv_files = list(directory.glob("*.csv")) + list(directory.glob("*.CSV"))
+    
+    for csv_file in csv_files:
+        print(f"Parsing {csv_file}...")
+        with open(csv_file, "r", encoding="utf-8") as f:
+            reader = csv.reader(f)
+            for row in reader:
+                if len(row) < 15:
+                    continue
+                yield {
+                    "postal_code": row[2],
+                    "prefecture_kana": row[3],
+                    "city_kana": row[4],
+                    "town_kana": row[5],
+                    "prefecture": row[6],
+                    "city": row[7],
+                    "town": row[8],
+                }
+
+
+def parse_jigyosyo_csv(directory: Path) -> Generator[Dict[str, Any], None, None]:
+    """Parse Shift-JIS office postal code CSV files."""
+    csv_files = list(directory.glob("*.csv")) + list(directory.glob("*.CSV"))
+    
+    for csv_file in csv_files:
+        for encoding in ["shift_jis", "cp932"]:
+            try:
+                with open(csv_file, "r", encoding=encoding) as f:
+                    reader = csv.reader(f)
+                    for row in reader:
+                        if len(row) < 13:
+                            continue
+                        yield {
+                            "postal_code": row[7],
+                            "office_kana": row[1],
+                            "office_name": row[2],
+                            "prefecture": row[3],
+                            "city": row[4],
+                            "town": row[5],
+                            "address_detail": row[6],
+                        }
+                return
+            except UnicodeDecodeError:
+                continue
 
 
 def import_to_table_storage(connection_string: str):
