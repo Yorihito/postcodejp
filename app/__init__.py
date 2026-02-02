@@ -1,1 +1,0 @@
-# PostcodeJP Application Package
