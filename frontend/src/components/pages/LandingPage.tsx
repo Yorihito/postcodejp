@@ -4,8 +4,23 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Link } from 'react-router-dom';
 import { RetroCounter } from '../ui/RetroCounter';
+import { useEffect, useState } from 'react';
 
 export function LandingPage() {
+    const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+
+    useEffect(() => {
+        fetch('/api/stats')
+            .then(res => res.json())
+            .then(data => {
+                if (data.last_updated) {
+                    const date = new Date(data.last_updated);
+                    setLastUpdated(date.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' }));
+                }
+            })
+            .catch(() => { });
+    }, []);
+
     return (
         <div className="min-h-screen pt-16 flex flex-col relative overflow-hidden">
             {/* Background decorations */}
@@ -17,7 +32,7 @@ export function LandingPage() {
                 <div className="space-y-4 max-w-4xl mx-auto">
                     <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium mb-4">
                         <span className="flex w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse" />
-                        2025年最新データ対応
+                        {lastUpdated ? `${lastUpdated} 更新` : 'データ更新中...'}
                     </div>
                     <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
                         日本で一番<br className="sm:hidden" />

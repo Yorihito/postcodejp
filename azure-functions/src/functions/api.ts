@@ -385,11 +385,22 @@ app.http("getStats", {
         try {
             const { system } = getTables();
             let visitorCount = 0;
+            let lastUpdated = null;
+
+            // Fetch visitor count
             try {
                 const entity = await system.getEntity<{ count: number }>("Visitor", "Count");
                 visitorCount = entity.count || 0;
             } catch {
-                // Ignore error if table/entity doesn't exist yet
+                // Ignore
+            }
+
+            // Fetch last updated
+            try {
+                const entity = await system.getEntity<{ updated_at: string }>("Metadata", "LastUpdated");
+                lastUpdated = entity.updated_at;
+            } catch {
+                // Ignore
             }
 
             return jsonResponse({
@@ -397,6 +408,7 @@ app.http("getStats", {
                 version: "1.0.0",
                 runtime: "Azure Functions",
                 visitor_count: visitorCount,
+                last_updated: lastUpdated,
                 endpoints: [
                     "GET /api/postal-codes/{postalCode}",
                     "GET /api/postal-codes/search?q=...",
