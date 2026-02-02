@@ -174,14 +174,23 @@ def import_to_table_storage(connection_string: str):
         utf_dir, last_modified = download_and_extract(UTF_ALL_URL, temp_path / "utf")
         print(f"  Data Last Modified: {last_modified}")
         
+        # Load all data into memory and sort to ensure efficient batching
+        print("  Loading and sorting postal codes data...")
+        postal_records = []
+        seen = set()
+        for record in parse_utf_csv(utf_dir):
+            pc = record["postal_code"]
+            if pc in seen:
+                continue
+            seen.add(pc)
+            postal_records.append(record)
+        
+        # Sort by postal code (PartitionKey comes from first 3 digits)
+        postal_records.sort(key=lambda x: x["postal_code"])
+        
         def postal_code_generator():
-            seen = set()
-            for record in parse_utf_csv(utf_dir):
+            for record in postal_records:
                 pc = record["postal_code"]
-                if pc in seen:
-                    continue
-                seen.add(pc)
-                
                 yield {
                     "PartitionKey": pc[:3],
                     "RowKey": pc[3:],
@@ -200,8 +209,12 @@ def import_to_table_storage(connection_string: str):
         print("\n=== Importing Offices ===")
         jigyosyo_dir, _ = download_and_extract(JIGYOSYO_URL, temp_path / "jigyosyo")
         
+        print("  Loading and sorting offices data...")
+        office_records = list(parse_jigyosyo_csv(jigyosyo_dir))
+        office_records.sort(key=lambda x: x["postal_code"])
+        
         def office_generator():
-            for record in parse_jigyosyo_csv(jigyosyo_dir):
+            for record in office_records:
                 pc = record["postal_code"]
                 yield {
                     "PartitionKey": pc[:3],
