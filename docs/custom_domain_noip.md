@@ -28,6 +28,16 @@ No-IPの管理画面で、Azure Static Web Apps へ転送するための **CNAME
         - 例: `ashy-beach-0927f3600.1.azurestaticapps.net`
 5. **「Add Hostname」**（または「Update Hostname」）をクリックして保存します。
 
+## Verification
+1. Access `https://postcodejp.ddns.net` in your browser.
+2. Verify that the application loads and the SSL certificate is valid.
+3. Access `https://postcodejp.ddns.net/api/postal-codes/1000001` to verify API access (requires Linked Backend configuration).
+
+## Current Status
+- Domain: `postcodejp.ddns.net`
+- Provider: No-IP
+- SSL: Managed by Azure Static Web Apps (Auto-renewing)
+
 ## 手順 3: Azure Static Web Apps でのドメイン追加
 
 1. **Azure Portal** の Static Web Apps 画面に戻ります。

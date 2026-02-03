@@ -10,6 +10,8 @@ export function RetroCounter() {
         // API呼び出しでカウントを取得
         const fetchCount = async () => {
             try {
+                // API_BASE_URL updated in client.ts
+
                 const data = await getVisitorCount();
                 setCount(data.count);
             } catch (err) {

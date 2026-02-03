@@ -28,7 +28,7 @@ export interface SearchResponse<T> {
     items: T[];
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://func-postcodejp.azurewebsites.net/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://postcodejp.ddns.net/api";
 
 export async function getPostalCode(code: string): Promise<PostalCode> {
     const res = await fetch(`${API_BASE_URL}/postal-codes/${code}`);

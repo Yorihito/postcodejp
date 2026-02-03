@@ -2,7 +2,7 @@ import { CopyButton } from '../ui/CopyButton';
 import { Card } from '../ui/Card';
 
 export function ApiDocsPage() {
-    const BASE_URL = "https://postcodejp.azurestaticapps.net/api"; // Replace with custom domain if available
+    const BASE_URL = "https://postcodejp.ddns.net/api";
 
     return (
         <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto space-y-12">
