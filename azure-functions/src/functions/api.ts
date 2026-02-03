@@ -136,7 +136,12 @@ app.http("searchPostalCodes", {
         }
 
         const query = request.query.get("q");
-        const limit = Math.min(parseInt(request.query.get("limit") || "20"), 100);
+
+        let limit = parseInt(request.query.get("limit") || "20", 10);
+        if (isNaN(limit) || limit < 1) {
+            limit = 20;
+        }
+        limit = Math.min(limit, 100);
 
         if (!query || query.length < 2) {
             return errorResponse("検索キーワードは2文字以上で指定してください");
