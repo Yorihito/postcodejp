@@ -28,4 +28,4 @@ jobs:
           app_location: "frontend"
           output_location: "dist"
           skip_app_build: false
-          build_command: "npm install && npm run build"
+          app_build_command: "npm install && npm run build"
