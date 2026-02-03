@@ -30,3 +30,4 @@ jobs:
           output_location: "dist"
           skip_app_build: false
           app_build_command: "npm install && npm run build"
+          api_build_command: "npm install && npm run build"

@@ -2,7 +2,7 @@
   "name": "postcodejp-functions",
   "version": "1.0.2",
   "description": "PostcodeJP API",
-  "main": "dist/functions/*.js",
+  "main": "dist/functions/api.js",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
