@@ -3,6 +3,7 @@
  */
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { TableClient, AzureNamedKeyCredential } from "@azure/data-tables";
+import { toHiragana, toKatakana, isRomaji } from "wanakana";
 
 // Allowed characters for search queries
 // Includes: Unicode letters (\p{L}), digits (\p{N}), Japanese-specific ranges,
@@ -165,22 +166,59 @@ app.http("searchPostalCodes", {
                 return errorResponse("検索キーワードが無効です");
             }
 
+
+
+            // ... existing code ...
+
             const termFilters = sanitizedTerms.map(term => {
                 // シングルクォートをエスケープ
                 const t = term.replace(/'/g, "''");
 
                 // カタカナ変換（読み仮名検索用）
-                const kanaT = hiraganaToKatakana(t).replace(/'/g, "''");
+                // 既存: inputが「とうきょう」なら「トウキョウ」に変換
+                let kanaT = hiraganaToKatakana(t).replace(/'/g, "''");
 
-                // 漢字フィールド(prefecture, city, town) OR カタカナフィールド(prefectureKana, cityKana, townKana)
-                return `(
+                // Romaji conversion (Issue #6)
+                // inputが「tokyo」なら -> hiragana:「とうきょう」, katakana:「トウキョウ」
+                let romajiHiragana = "";
+                let romajiKatakana = "";
+
+                if (isRomaji(term)) {
+                    romajiHiragana = toHiragana(term).replace(/'/g, "''");
+                    romajiKatakana = toKatakana(term).replace(/'/g, "''");
+                }
+
+                // Construct filter
+                // Original term (Kanji/Kana) match
+                const termCondition = `
                     (prefecture ge '${t}' and prefecture lt '${t}\uffff') or 
                     (city ge '${t}' and city lt '${t}\uffff') or 
                     (town ge '${t}' and town lt '${t}\uffff') or
                     (prefectureKana ge '${kanaT}' and prefectureKana lt '${kanaT}\uffff') or 
                     (cityKana ge '${kanaT}' and cityKana lt '${kanaT}\uffff') or 
                     (townKana ge '${kanaT}' and townKana lt '${kanaT}\uffff')
-                )`;
+                `;
+
+                // Romaji match conditions (if applicable)
+                let romajiCondition = "";
+                if (romajiHiragana && romajiKatakana) {
+                    // Check against Kana fields using converted Hiragana/Katakana
+                    // Note: Database Kana fields are typically Katakana or Hiragana?
+                    // Based on previous logs, fields are: prefecture_kana (Katakana usually? e.g. トウキョウト)
+                    // Let's assume standard postal data which is usually Half-width or Full-width Katakana.
+                    // The 'toKatakana' output is Full-width.
+                    // The current code assumes `prefectureKana` stores data that matches `hiraganaToKatakana(t)`.
+
+                    romajiCondition = ` or 
+                    (prefectureKana ge '${romajiKatakana}' and prefectureKana lt '${romajiKatakana}\uffff') or 
+                    (cityKana ge '${romajiKatakana}' and cityKana lt '${romajiKatakana}\uffff') or 
+                    (townKana ge '${romajiKatakana}' and townKana lt '${romajiKatakana}\uffff') or
+                    (prefectureKana ge '${romajiHiragana}' and prefectureKana lt '${romajiHiragana}\uffff') or 
+                    (cityKana ge '${romajiHiragana}' and cityKana lt '${romajiHiragana}\uffff') or 
+                    (townKana ge '${romajiHiragana}' and townKana lt '${romajiHiragana}\uffff')`;
+                }
+
+                return `(${termCondition}${romajiCondition})`;
             });
 
             // 全てのキーワード条件を満たす (AND)
@@ -200,16 +238,37 @@ app.http("searchPostalCodes", {
                 if (splitTerms.length > 1 && splitTerms.length < 6) { // 暴走防止のため制限
                     const splitFilters = splitTerms.map(term => {
                         const t = term.replace(/'/g, "''");
-                        const kanaT = hiraganaToKatakana(t).replace(/'/g, "''");
+                        let kanaT = hiraganaToKatakana(t).replace(/'/g, "''");
 
-                        return `(
+                        let romajiHiragana = "";
+                        let romajiKatakana = "";
+
+                        if (isRomaji(term)) {
+                            romajiHiragana = toHiragana(term).replace(/'/g, "''");
+                            romajiKatakana = toKatakana(term).replace(/'/g, "''");
+                        }
+
+                        const termCondition = `
                             (prefecture ge '${t}' and prefecture lt '${t}\uffff') or 
                             (city ge '${t}' and city lt '${t}\uffff') or 
                             (town ge '${t}' and town lt '${t}\uffff') or
                             (prefectureKana ge '${kanaT}' and prefectureKana lt '${kanaT}\uffff') or 
                             (cityKana ge '${kanaT}' and cityKana lt '${kanaT}\uffff') or 
                             (townKana ge '${kanaT}' and townKana lt '${kanaT}\uffff')
-                        )`;
+                        `;
+
+                        let romajiCondition = "";
+                        if (romajiHiragana && romajiKatakana) {
+                            romajiCondition = ` or 
+                            (prefectureKana ge '${romajiKatakana}' and prefectureKana lt '${romajiKatakana}\uffff') or 
+                            (cityKana ge '${romajiKatakana}' and cityKana lt '${romajiKatakana}\uffff') or 
+                            (townKana ge '${romajiKatakana}' and townKana lt '${romajiKatakana}\uffff') or
+                            (prefectureKana ge '${romajiHiragana}' and prefectureKana lt '${romajiHiragana}\uffff') or 
+                            (cityKana ge '${romajiHiragana}' and cityKana lt '${romajiHiragana}\uffff') or 
+                            (townKana ge '${romajiHiragana}' and townKana lt '${romajiHiragana}\uffff')`;
+                        }
+
+                        return `(${termCondition}${romajiCondition})`;
                     });
                     const secondaryFilter = splitFilters.join(' and ');
                     finalFilter = `(${primaryFilter}) or (${secondaryFilter})`;
