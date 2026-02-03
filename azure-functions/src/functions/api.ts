@@ -129,7 +129,7 @@ app.http("getPostalCode", {
 app.http("searchPostalCodes", {
     methods: ["GET", "OPTIONS"],
     authLevel: "anonymous",
-    route: "postal-codes/search",
+    route: "postal-codes/search-v2",
     handler: async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
         if (request.method === "OPTIONS") {
             return { status: 204, headers: corsHeaders };
