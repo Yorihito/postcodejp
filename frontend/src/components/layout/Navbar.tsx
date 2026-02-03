@@ -2,8 +2,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { MapPin, BookOpen, Github } from 'lucide-react';
 import { cn } from '../ui/Button';
 
+import { useLanguage } from '../../contexts/LanguageContext';
+
 export function Navbar() {
     const location = useLocation();
+    const { t } = useLanguage();
 
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-lg border-b border-slate-800">
@@ -28,7 +31,7 @@ export function Navbar() {
                                     : "text-slate-400 hover:text-white hover:bg-slate-800/50"
                             )}
                         >
-                            ホーム
+                            {t('home')}
                         </Link>
                         <Link
                             to="/docs"
@@ -40,7 +43,7 @@ export function Navbar() {
                             )}
                         >
                             <BookOpen className="w-4 h-4" />
-                            <span className="hidden sm:inline">APIドキュメント</span>
+                            <span className="hidden sm:inline">{t('api_docs')}</span>
                             <span className="sm:hidden">Docs</span>
                         </Link>
                         <a

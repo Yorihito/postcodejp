@@ -12,12 +12,12 @@
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.18",
     "clsx": "^2.1.1",
-    "ionic": "^5.4.16",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.0",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "wanakana": "^5.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
@@ -25,6 +25,7 @@
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@types/react-router-dom": "^5.3.3",
+    "@types/wanakana": "^4.0.6",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.23",
     "eslint": "^9.39.1",

@@ -4,9 +4,11 @@ import { PostalCodeSearch } from './PostalCodeSearch';
 import { AddressSearch } from './AddressSearch';
 import { Button, cn } from './ui/Button';
 import { Card } from './ui/Card';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export function SearchInterface() {
     const [activeTab, setActiveTab] = useState<'postal' | 'address'>('address');
+    const { t } = useLanguage();
 
     return (
         <div className="w-full max-w-xl mx-auto space-y-6">
@@ -21,8 +23,7 @@ export function SearchInterface() {
                         )}
                     >
                         <Search className="w-4 h-4 mr-1.5 md:mr-2" />
-                        <span className="text-xs sm:text-sm md:text-base">住所</span>
-                        <span className="hidden sm:inline text-xs sm:text-sm md:text-base">から</span>
+                        <span className="text-xs sm:text-sm md:text-base">{t('search_tab_address')}</span>
                     </Button>
                     <Button
                         variant={activeTab === 'postal' ? 'secondary' : 'ghost'}
@@ -33,8 +34,7 @@ export function SearchInterface() {
                         )}
                     >
                         <MapPin className="w-4 h-4 mr-1.5 md:mr-2" />
-                        <span className="text-xs sm:text-sm md:text-base">郵便番号</span>
-                        <span className="hidden sm:inline text-xs sm:text-sm md:text-base">から</span>
+                        <span className="text-xs sm:text-sm md:text-base">{t('search_tab_zip')}</span>
                     </Button>
                 </div>
             </Card>

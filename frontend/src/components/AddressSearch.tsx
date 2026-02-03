@@ -5,17 +5,19 @@ import { CopyButton } from './ui/CopyButton';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Card } from './ui/Card';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export function AddressSearch() {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<PostalCode[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const { t, toRomaji, language } = useLanguage();
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
         if (query.length < 2) {
-            setError('検索ワードは2文字以上で入力してください');
+            setError(language === 'en' ? 'Key word must be at least 2 characters' : '検索ワードは2文字以上で入力してください');
             return;
         }
 
@@ -26,10 +28,10 @@ export function AddressSearch() {
             const data = await searchPostalCodes(query);
             setResults(data.items);
             if (data.items.length === 0) {
-                setError('該当する住所が見つかりませんでした');
+                setError(t('no_results'));
             }
         } catch (err: any) {
-            setError(err.message || '検索に失敗しました');
+            setError(language === 'en' ? 'Search failed' : '検索に失敗しました');
         } finally {
             setLoading(false);
         }
@@ -39,13 +41,14 @@ export function AddressSearch() {
         <div className="space-y-6">
             <form onSubmit={handleSearch} className="flex gap-2">
                 <Input
-                    placeholder="住所 (例: 東京都千代田区)"
+                    placeholder={language === 'en' ? 'Address (e.g. Tokyo Chiyoda)' : '住所 (例: 東京都千代田区)'}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     className="flex-1"
                 />
                 <Button type="submit" disabled={loading}>
-                    {loading ? '検索中...' : <><Search className="w-4 h-4 mr-2" /> 検索</>}
+                    {loading ? (language === 'en' ? 'Searching...' : '検索中...') :
+                        <><Search className="w-4 h-4 mr-2" /> {language === 'en' ? 'Search' : '検索'}</>}
                 </Button>
             </form>
 
@@ -73,7 +76,7 @@ export function AddressSearch() {
                                     {item.prefecture} {item.city} {item.town}
                                 </p>
                                 <p className="text-xs text-slate-400 dark:text-gray-400">
-                                    {item.prefecture_kana} {item.city_kana} {item.town_kana}
+                                    {toRomaji(item.prefecture_kana)} {toRomaji(item.city_kana)} {toRomaji(item.town_kana)}
                                 </p>
                             </div>
                         </div>
