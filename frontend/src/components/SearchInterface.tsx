@@ -11,7 +11,7 @@ export function SearchInterface() {
     const { t } = useLanguage();
 
     return (
-        <div className="w-full max-w-xl mx-auto space-y-6">
+        <div className="w-full max-w-xl mx-auto space-y-6 text-left">
             <Card className="p-1.5 bg-slate-900/60 backdrop-blur-xl border-slate-800">
                 <div className="grid grid-cols-2 gap-1">
                     <Button
