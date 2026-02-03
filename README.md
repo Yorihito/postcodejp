@@ -2,11 +2,11 @@
 
 日本郵便の郵便番号データを活用したREST APIシステム
 
-[![Azure Functions](https://img.shields.io/badge/Azure-Functions-blue)](https://func-postcodejp.azurewebsites.net)
+[![Azure Functions](https://img.shields.io/badge/Azure-Functions-blue)](https://postcodejp.ddns.net)
 
 ## ライブAPI
 
-🔗 **https://func-postcodejp.azurewebsites.net**
+🔗 **https://postcodejp.ddns.net**
 
 ## 特徴
 
