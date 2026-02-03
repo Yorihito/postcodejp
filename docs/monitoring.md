@@ -7,7 +7,7 @@ Azure API Managementは高機能ですが高コストです。
 APIがどれくらい呼び出されているかを簡易的に知るために、訪問者数（Visitor Count）を返すエンドポイントを用意しました。
 
 ```bash
-curl https://func-postcodejp.azurewebsites.net/api/stats
+curl https://postcodejp.ddns.net/api/stats
 ```
 
 レスポンス例:

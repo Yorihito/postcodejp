@@ -30,7 +30,7 @@
 
 ```bash
 # 郵便番号から住所取得
-curl https://func-postcodejp.azurewebsites.net/api/postal-codes/1000001
+curl https://postcodejp.ddns.net/api/postal-codes/1000001
 
 # レスポンス:
 # {
@@ -41,10 +41,10 @@ curl https://func-postcodejp.azurewebsites.net/api/postal-codes/1000001
 # }
 
 # 住所から検索
-curl "https://func-postcodejp.azurewebsites.net/api/postal-codes/search?q=東京都"
+curl "https://postcodejp.ddns.net/api/postal-codes/search?q=東京都"
 
 # 都道府県一覧
-curl https://func-postcodejp.azurewebsites.net/api/prefectures
+curl https://postcodejp.ddns.net/api/prefectures
 ```
 
 ## 技術スタック

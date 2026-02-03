@@ -144,7 +144,6 @@ app.http("searchPostalCodes", {
 
         try {
             const results: any[] = [];
-            let definedSplitTerms: string[] | null = null;
 
             // スペース区切りで複数キーワードに対応 (AND検索)
             // 都道府県、市区町村、町域のいずれかに前方一致すればヒット (OR検索)
@@ -194,7 +193,6 @@ app.http("searchPostalCodes", {
 
                 // 分割結果が元の単語と異なり、かつ複数になった場合のみ追加条件を作成
                 if (splitTerms.length > 1 && splitTerms.length < 6) { // 暴走防止のため制限
-                    definedSplitTerms = splitTerms;
                     const splitFilters = splitTerms.map(term => {
                         const t = term.replace(/'/g, "''");
                         const kanaT = hiraganaToKatakana(t).replace(/'/g, "''");
@@ -231,11 +229,6 @@ app.http("searchPostalCodes", {
             return jsonResponse({
                 total: results.length,
                 items: results,
-                debug: {
-                    filter: finalFilter,
-                    splitTerms: definedSplitTerms,
-                    originalTerm: sanitizedTerms[0]
-                }
             });
         } catch (error) {
             context.error("Error searching postal codes:", error);
