@@ -188,7 +188,7 @@ app.http("searchPostalCodes", {
                 const originalTerm = sanitizedTerms[0];
                 // 接尾辞の後にスペースを挿入して分割
                 // 少なくとも1文字以上の先行文字がある場合のみ分割（"市川市"の先頭"市"などを分割しないため）
-                const splitQuery = originalTerm.replace(/(.{1,}[都道府県市区町村郡])(?=.)/g, "$1 ").trim();
+                const splitQuery = originalTerm.replace(/(.+?[都道府県市区町村郡])(?=.)/g, "$1 ").trim();
                 const splitTerms = splitQuery.split(/\s+/);
 
                 // 分割結果が元の単語と異なり、かつ複数になった場合のみ追加条件を作成
